@@ -62,10 +62,14 @@ function SignIn() {
   const { signIn, isLoading } = useSession()
   const [, disconnect] = useAccount()
   const router = useRouter()
+  useEffect(() => {
+    signIn().then(() => router.replace('/'))
+  }, [])
   return (
     <>
       <Button
         isLoading={isLoading}
+        loadingText="waiting for wallet sign"
         variant="primary"
         size="large"
         w="full"

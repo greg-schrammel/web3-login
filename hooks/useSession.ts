@@ -17,7 +17,7 @@ const createSiweMessage = async ({ address, chainId }) => {
     version: '1',
     chainId,
     nonce,
-  })
+  }).prepareMessage()
 }
 
 const getState = ({ user, error, loading }: ResponseType) => {
@@ -53,7 +53,7 @@ export const useSession = ({ redirectIfNotLogged } = { redirectIfNotLogged: true
       setState((x) => ({ ...x, error: undefined, loading: true }))
 
       const message = await createSiweMessage({ address, chainId })
-      const signRes = await signMessage({ message: message.prepareMessage() })
+      const signRes = await signMessage({ message })
       if (signRes.error) throw signRes.error
 
       // Verify signature
