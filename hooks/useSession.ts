@@ -1,8 +1,8 @@
-import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getEnsData } from 'lib/ens'
+import { useCallback, useMemo, useState } from 'react'
 import { SiweMessage } from 'siwe'
 import useSWR from 'swr'
-import { Connector, useAccount, useConnect, useNetwork, useSignMessage } from 'wagmi'
+import { useAccount, useNetwork, useSignMessage } from 'wagmi'
 
 const sessionFetcher = (path, options = undefined) =>
   fetch(`/api/session/${path}`, options).then((res) => res.json())
@@ -30,6 +30,10 @@ const getState = ({ user, error, loading }: ResponseType) => {
 
 type User = {
   address: string
+  ens: {
+    avatar: string
+    name: string
+  }
 }
 
 type ResponseType = {
@@ -64,7 +68,9 @@ export const useSession = ({ redirectIfNotLogged } = { redirectIfNotLogged: true
       })
       if (!verifyRes.ok) throw new Error('Error verifying message')
 
-      setState((x) => ({ ...x, user: { address }, loading: false }))
+      const ens = await getEnsData(address)
+
+      setState((x) => ({ ...x, user: { address, ens }, loading: false }))
     } catch (error) {
       console.log(error)
       setState((x) => ({ ...x, error, loading: false }))
@@ -74,15 +80,8 @@ export const useSession = ({ redirectIfNotLogged } = { redirectIfNotLogged: true
   const signOut = useCallback(async () => {
     disconnect()
     await sessionFetcher('logout')
-    router.replace('/connect')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disconnect])
+  }, [disconnect]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const router = useRouter()
-  useEffect(() => {
-    if (redirectIfNotLogged && router.route !== '/connect') router.replace('/connect')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [redirectIfNotLogged])
   const { data: user, error } = useSWR('me', sessionFetcher, {
     revalidateOnFocus: true,
   })

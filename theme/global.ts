@@ -7,7 +7,7 @@ const globalStyles: Styles = {
       lineHeight: 'base',
     },
     body: {
-      minHeight: '140vh', // temporary
+      minHeight: '100vh', // temporary
     },
   }),
 }

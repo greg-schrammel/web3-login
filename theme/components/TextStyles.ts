@@ -1,6 +1,6 @@
 import { ComponentSingleStyleConfig } from '@chakra-ui/react'
 
-export const TooltipStyles: ComponentSingleStyleConfig = {
+export const TextStyles: ComponentSingleStyleConfig = {
   baseStyle: {
     fontWeight: 'bold',
   },
@@ -9,4 +9,4 @@ export const TooltipStyles: ComponentSingleStyleConfig = {
   defaultProps: {},
 }
 
-export default TooltipStyles
+export default TextStyles

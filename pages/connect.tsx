@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Text, Heading, Stack } from '@chakra-ui/react'
+import { Button, Text, Heading, Stack, Image, SimpleGrid } from '@chakra-ui/react'
 import { useAccount, useConnect } from 'wagmi'
 import { Layout } from 'components/Layout'
 import QRCode from 'components/qrCode'
@@ -8,11 +8,25 @@ import { useIsMounted } from 'hooks/useIsMounted'
 import { withIronSessionSsr } from 'iron-session/next'
 import { sessionOptions } from 'lib/session'
 import { useRouter } from 'next/router'
+import { formatRegistry, walletRegistryURL } from 'lib/walletconnect/registry'
+import useSWRImmutable from 'swr/immutable'
+import { isMobile } from 'lib/walletconnect/env'
+import { formatIOSMobile, getMobileLinkRegistry } from 'lib/walletconnect/mobile'
+import { ButtonLink } from 'components/ButtonLink'
+
+const fetchWalletConnectLinks = async () => {
+  const registry = await fetch(walletRegistryURL).then((x) => x.json())
+  return getMobileLinkRegistry(formatRegistry(registry)).slice(0, 5)
+}
+
+const walletImgSize = '32px'
 
 const WalletConnect = () => {
   const [{ data: connectData }, connect] = useConnect()
   const wcConnector = connectData.connectors.find((c) => c.id === 'walletConnect')
   const provider = wcConnector.getProvider()
+
+  const { data: links = [] } = useSWRImmutable(isMobile() && 'registry', fetchWalletConnectLinks)
 
   const [uri, setUri] = useState<string>()
   useEffect(() => {
@@ -27,10 +41,39 @@ const WalletConnect = () => {
     })()
   }, [connect, connectData.connectors, provider.connector, wcConnector, uri])
 
-  return !uri ? null : (
-    <>
-      <QRCode logoSize={75} size={336} value={uri} logoSrc="/assets/concave-logo.png" />
-    </>
+  if (!uri) return null
+
+  return isMobile() ? (
+    <SimpleGrid columns={3} gap={4}>
+      {links.map((wallet) => (
+        <ButtonLink
+          key={wallet.name}
+          href={formatIOSMobile(uri, wallet)}
+          bg="none"
+          flexDirection="column"
+          color="black"
+          variant="primary"
+          size="large"
+          _hover={{ bg: 'bg.medium' }}
+          p={2}
+          gap={2}
+          h="auto"
+        >
+          <Image
+            src={wallet.logo}
+            alt=""
+            minH={walletImgSize}
+            minW={walletImgSize}
+            w={walletImgSize}
+            h={walletImgSize}
+            borderRadius="lg"
+          />
+          <Text fontSize="14px">{wallet.shortName}</Text>
+        </ButtonLink>
+      ))}
+    </SimpleGrid>
+  ) : (
+    <QRCode logoSize={75} size={336} value={uri} logoSrc="/assets/concave-logo.png" />
   )
 }
 
@@ -59,12 +102,18 @@ function Connect() {
 }
 
 function SignIn() {
-  const { signIn, isLoading } = useSession()
+  const { signIn, user, isLoading } = useSession()
   const [, disconnect] = useAccount()
+
   const router = useRouter()
   useEffect(() => {
-    signIn().then(() => router.replace('/'))
-  }, [])
+    signIn()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (user) router.replace('/')
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <>
       <Button
@@ -103,7 +152,7 @@ function Login() {
         p={8}
       >
         <Heading fontSize="24px" fontWeight="extrabold" w="full" mb={3}>
-          Concave
+          Web3 Login
         </Heading>
         {isMounted && !connectData.connected ? <Connect /> : <SignIn />}
       </Stack>

@@ -1,4 +1,5 @@
 import { withIronSessionApiRoute } from 'iron-session/next'
+import { getEnsData } from 'lib/ens'
 import { sessionOptions } from 'lib/session'
 import { NextApiRequest, NextApiResponse } from 'next'
 
@@ -8,7 +9,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     res.setHeader('Allow', ['GET']).status(405).end(`Method ${method} Not Allowed`)
     return
   }
-  res.send({ address: req.session.siwe?.address })
+
+  const address = req.session.siwe?.address
+  if (!address) {
+    res.status(401).json({ message: `You're not connected` })
+    return
+  }
+
+  const ens = await getEnsData(address)
+
+  res.send({ address, ens })
 }
 
 export default withIronSessionApiRoute(handler, sessionOptions)

@@ -3,7 +3,7 @@ import type { AppProps } from 'next/app'
 
 import theme from 'theme'
 import 'public/fonts.css'
-import { WagmiProvider } from 'components/wagmi/WagmiProvider'
+import { WagmiProvider } from 'components/WagmiProvider'
 
 export default function App({ Component, pageProps }: AppProps) {
   // this ensures the theme will be right even on ssr pages (won't flash wrong theme)
